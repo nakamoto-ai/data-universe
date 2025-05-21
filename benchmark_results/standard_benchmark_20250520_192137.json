@@ -1,0 +1,150 @@
+{
+  "baseline": {
+    "duration": 30.099719285964966,
+    "total_scrapes": 18,
+    "scrapes_per_second": 0.5980122216087617,
+    "total_entities": 117,
+    "entities_per_second": 3.8870794404569513,
+    "storage_writes": 16,
+    "storage_writes_per_second": 0.5315664192077882,
+    "storage_stats": {
+      "total_entities": 117,
+      "write_operations": 16,
+      "avg_write_time": 0.01014922559261322,
+      "last_write_time": 0.010161638259887695
+    },
+    "batching_enabled": false,
+    "worker_count": 5,
+    "scrapers": {
+      "ScraperId.X_FLASH": {
+        "calls": 6,
+        "entities": 51
+      },
+      "ScraperId.REDDIT_LITE": {
+        "calls": 6,
+        "entities": 49
+      },
+      "ScraperId.YOUTUBE_TRANSCRIPT": {
+        "calls": 6,
+        "entities": 17
+      }
+    },
+    "name": "baseline",
+    "config": {
+      "workers": 5,
+      "duration": 30,
+      "batching": false
+    }
+  },
+  "more_workers": {
+    "duration": 30.104641675949097,
+    "total_scrapes": 18,
+    "scrapes_per_second": 0.5979144410272248,
+    "total_entities": 147,
+    "entities_per_second": 4.882967935055669,
+    "storage_writes": 18,
+    "storage_writes_per_second": 0.5979144410272248,
+    "storage_stats": {
+      "total_entities": 147,
+      "write_operations": 18,
+      "avg_write_time": 0.010144432385762533,
+      "last_write_time": 0.01019144058227539
+    },
+    "batching_enabled": false,
+    "worker_count": 20,
+    "scrapers": {
+      "ScraperId.X_FLASH": {
+        "calls": 6,
+        "entities": 61
+      },
+      "ScraperId.REDDIT_LITE": {
+        "calls": 6,
+        "entities": 60
+      },
+      "ScraperId.YOUTUBE_TRANSCRIPT": {
+        "calls": 6,
+        "entities": 26
+      }
+    },
+    "name": "more_workers",
+    "config": {
+      "workers": 20,
+      "duration": 30,
+      "batching": false
+    }
+  },
+  "batching": {
+    "duration": 30.123188018798828,
+    "total_scrapes": 18,
+    "scrapes_per_second": 0.5975463151100352,
+    "total_entities": 135,
+    "entities_per_second": 4.481597363325264,
+    "storage_writes": 5,
+    "storage_writes_per_second": 0.16598508753056532,
+    "storage_stats": {
+      "total_entities": 135,
+      "write_operations": 5,
+      "avg_write_time": 0.008131074905395507,
+      "last_write_time": 0.008182048797607422
+    },
+    "batching_enabled": true,
+    "worker_count": 5,
+    "scrapers": {
+      "ScraperId.X_FLASH": {
+        "calls": 6,
+        "entities": 64
+      },
+      "ScraperId.REDDIT_LITE": {
+        "calls": 6,
+        "entities": 51
+      },
+      "ScraperId.YOUTUBE_TRANSCRIPT": {
+        "calls": 6,
+        "entities": 20
+      }
+    },
+    "name": "batching",
+    "config": {
+      "workers": 5,
+      "duration": 30,
+      "batching": true
+    }
+  },
+  "optimized": {
+    "duration": 30.116615295410156,
+    "total_scrapes": 18,
+    "scrapes_per_second": 0.5976767250715336,
+    "total_entities": 137,
+    "entities_per_second": 4.54898396304445,
+    "storage_writes": 5,
+    "storage_writes_per_second": 0.16602131251987046,
+    "storage_stats": {
+      "total_entities": 137,
+      "write_operations": 5,
+      "avg_write_time": 0.008152294158935546,
+      "last_write_time": 0.008079767227172852
+    },
+    "batching_enabled": true,
+    "worker_count": 20,
+    "scrapers": {
+      "ScraperId.X_FLASH": {
+        "calls": 6,
+        "entities": 57
+      },
+      "ScraperId.REDDIT_LITE": {
+        "calls": 6,
+        "entities": 50
+      },
+      "ScraperId.YOUTUBE_TRANSCRIPT": {
+        "calls": 6,
+        "entities": 30
+      }
+    },
+    "name": "optimized",
+    "config": {
+      "workers": 20,
+      "duration": 30,
+      "batching": true
+    }
+  }
+}
