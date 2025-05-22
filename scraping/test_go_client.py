@@ -5,8 +5,11 @@ import json
 from typing import List, Optional
 
 import bittensor as bt
+from bittensor import logging
 from common.data import DateRange, DataLabel
-from scraping.go_client import GoScraperClient, BatchScraperClient
+from scraping.go_client import GoScraperClient
+
+logging.set_debug()
 
 async def test_enqueue_job(
     client: GoScraperClient,
@@ -18,21 +21,21 @@ async def test_enqueue_job(
 ):
     """Test enqueueing a single scrape job with the specified parameters."""
     print(f"\n=== Enqueueing job for {scraper_id} ===")
-    
+
     # Create date range
     now = dt.datetime.now(dt.timezone.utc)
     start_time = now - dt.timedelta(hours=hours_ago)
     date_range = DateRange(start=start_time, end=now)
-    
+
     # Convert label strings to DataLabel objects
     data_labels = None
     if labels:
         data_labels = [DataLabel(value=label) for label in labels]
-    
+
     print(f"Date range: {date_range.start} to {date_range.end}")
     print(f"Entity limit: {entity_limit}")
     print(f"Labels: {labels}")
-    
+
     try:
         # Enqueue the job
         start = dt.datetime.now()
@@ -44,7 +47,7 @@ async def test_enqueue_job(
             callback_info=callback_info
         )
         elapsed = (dt.datetime.now() - start).total_seconds()
-        
+
         # Print results
         print(f"Success! Job enqueued with ID: {job_id} in {elapsed:.2f}s")
         return job_id
@@ -52,39 +55,11 @@ async def test_enqueue_job(
         print(f"Error: {e}")
         return None
 
-async def test_enqueue_batch(client: BatchScraperClient, configs: List[dict]):
-    """Test batch job enqueueing with multiple configurations."""
-    print("\n=== Testing Batch Job Enqueueing ===")
-    print(f"Number of configurations: {len(configs)}")
-    
-    try:
-        # Enqueue batch jobs
-        start = dt.datetime.now()
-        job_ids = await client.enqueue_batch(configs)
-        elapsed = (dt.datetime.now() - start).total_seconds()
-        
-        # Print results
-        print(f"Batch enqueued in {elapsed:.2f}s")
-        
-        success_count = 0
-        
-        for i, result in enumerate(job_ids):
-            if isinstance(result, Exception):
-                print(f"Config {i+1}: Error - {result}")
-            else:
-                success_count += 1
-                print(f"Config {i+1}: Job ID: {result}")
-        
-        print(f"\nSummary: {success_count}/{len(job_ids)} jobs successfully enqueued")
-        return job_ids
-    except Exception as e:
-        print(f"Batch error: {e}")
-        return None
 
 async def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Test the Go scraper queue client")
-    parser.add_argument("--scraper", type=str, default="X.flash", 
+    parser.add_argument("--scraper", type=str, default="X.flash",
                       help="Scraper ID to test (default: X.flash)")
     parser.add_argument("--redis", type=str, default="redis://localhost:6379",
                       help="Redis connection URL")
@@ -101,10 +76,10 @@ async def main():
     parser.add_argument("--callback-url", type=str,
                       help="Optional callback URL for results")
     args = parser.parse_args()
-    
+
     # Create client
     client = GoScraperClient(redis_url=args.redis, queue_name=args.queue)
-    
+
     # Prepare callback info if provided
     callback_info = None
     if args.callback_url:
@@ -113,64 +88,23 @@ async def main():
             "method": "POST",
             "headers": {"Content-Type": "application/json"}
         }
-    
+
     try:
         # Connect to Redis
         await client.connect()
-        
-        if args.batch:
-            # Create batch client
-            batch_client = BatchScraperClient(base_client=client)
-            
-            # Create batch configurations
-            configs = [
-                {
-                    "scraper_id": "X.flash",
-                    "date_range": DateRange(
-                        start=dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=args.hours),
-                        end=dt.datetime.now(dt.timezone.utc)
-                    ),
-                    "entity_limit": args.limit,
-                    "labels": [DataLabel(value="politics")] if args.labels else None,
-                    "callback_info": callback_info
-                },
-                {
-                    "scraper_id": "Reddit.lite",
-                    "date_range": DateRange(
-                        start=dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=args.hours),
-                        end=dt.datetime.now(dt.timezone.utc)
-                    ),
-                    "entity_limit": args.limit,
-                    "labels": [DataLabel(value="technology")] if args.labels else None,
-                    "callback_info": callback_info
-                },
-                {
-                    "scraper_id": "YouTube.transcript",
-                    "date_range": DateRange(
-                        start=dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=args.hours),
-                        end=dt.datetime.now(dt.timezone.utc)
-                    ),
-                    "entity_limit": args.limit,
-                    "labels": [DataLabel(value="educational")] if args.labels else None,
-                    "callback_info": callback_info
-                }
-            ]
-            
-            await test_enqueue_batch(batch_client, configs)
-        else:
-            # Test single job enqueueing
-            await test_enqueue_job(
-                client,
-                scraper_id=args.scraper,
-                hours_ago=args.hours,
-                entity_limit=args.limit,
-                labels=args.labels,
-                callback_info=callback_info
-            )
+
+        # Test single job enqueueing
+        await test_enqueue_job(
+            client,
+            scraper_id=args.scraper,
+            hours_ago=args.hours,
+            entity_limit=args.limit,
+            labels=args.labels,
+            callback_info=callback_info
+        )
     finally:
-        # Close the connection
         await client.close()
-        
+
     print("\nNOTE: This test only confirms jobs were enqueued successfully.")
     print("The Go service should process these jobs asynchronously.")
     if args.callback_url:

@@ -2,7 +2,7 @@ import json
 import uuid
 import datetime as dt
 from typing import Dict, List, Optional, Any
-import aioredis
+from redis.asyncio import Redis
 import bittensor as bt
 from common.data import DataEntity, DataSource, DataLabel, DateRange
 
@@ -35,14 +35,7 @@ class GoScraperClient:
         """Connect to Redis if not already connected."""
         if not self._connected:
             try:
-                # Use the new Redis client API if available (aioredis >= 2.0)
-                try:
-                    from redis.asyncio import Redis
-                    self.redis = Redis.from_url(self.redis_url)
-                except ImportError:
-                    # Fallback to older API
-                    self.redis = await aioredis.create_redis_pool(self.redis_url)
-
+                self.redis = Redis.from_url(self.redis_url)
                 self._connected = True
                 bt.logging.info(f"Connected to Redis at {self.redis_url}")
             except Exception as e:
@@ -53,12 +46,7 @@ class GoScraperClient:
         """Close the Redis connection."""
         if self._connected and self.redis:
             # Handle different Redis client versions
-            if hasattr(self.redis, "close"):
-                self.redis.close()
-                if hasattr(self.redis, "wait_closed"):
-                    await self.redis.wait_closed()
-            elif hasattr(self.redis, "aclose"):
-                await self.redis.aclose()
+            await self.redis.close()
 
             self._connected = False
             bt.logging.info("Disconnected from Redis")
@@ -124,35 +112,7 @@ class GoScraperClient:
 
     async def _push_to_queue(self, job: Dict[str, Any]) -> None:
         """Push a job to the Redis queue."""
+        if not self.redis:
+            raise Exception("Redis connection not established")
         encoded_job = json.dumps(job)
-
-        # Different Redis client versions have different APIs
-        if hasattr(self.redis, "rpush"):
-            await self.redis.rpush(self.queue_name, encoded_job)
-        else:
-            await self.redis.execute_command("RPUSH", self.queue_name, encoded_job)
-
-
-class BatchScraperClient:
-    """
-    Enhanced client that supports batched operations for improved efficiency.
-
-    This client can enqueue multiple scrape jobs in parallel,
-    reducing the overhead of multiple Redis round-trips.
-    """
-
-    def __init__(
-        self,
-        base_client: Optional[GoScraperClient] = None,
-        redis_url: str = "redis://localhost:6379",
-        queue_name: str = "scrape_queue",
-        max_batch_size: int = 20
-    ):
-        """
-        Initialize the batch scraper client.
-
-        Args:
-            base_client: Optional existing GoScraperClient to use
-            redis_url: Redis connection URL
-            queue_name: Redis list name used as a queue for scrape jobs
-            max
+        await self.redis.rpush(self.queue_name, encoded_job)
