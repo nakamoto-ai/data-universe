@@ -4,7 +4,7 @@ import datetime as dt
 from typing import Dict, List, Optional, Any
 from redis.asyncio import Redis
 import bittensor as bt
-from common.data import DataEntity, DataSource, DataLabel, DateRange
+from common.data import DataLabel, DateRange
 
 class GoScraperClient:
     """
@@ -17,7 +17,7 @@ class GoScraperClient:
     def __init__(
         self,
         redis_url: str = "redis://localhost:6379",
-        queue_name: str = "scrape_queue"
+        queue_name: str = "scrape_queue",
     ):
         """
         Initialize the Go scraper client.
@@ -57,10 +57,11 @@ class GoScraperClient:
         date_range: DateRange,
         labels: Optional[List[DataLabel]] = None,
         entity_limit: Optional[int] = None,
-        callback_info: Optional[Dict[str, Any]] = None
+        callback_info: Optional[Dict[str, Any]] = None,
+        queue_name: Optional[str] = None
     ) -> str:
         """
-        Enqueue a scrape job to the Redis queue.
+        Enqueue a scrape job to the appropriate Redis queue based on scraper type.
 
         Args:
             scraper_id: ID of the scraper to use
@@ -68,6 +69,7 @@ class GoScraperClient:
             labels: Optional list of data labels
             entity_limit: Maximum number of entities to return
             callback_info: Optional information for the consumer to use for callbacks
+            queue_name: Optional override for the queue name
 
         Returns:
             The job ID that was generated for this scrape request
@@ -103,16 +105,23 @@ class GoScraperClient:
 
         # Send the job to the queue
         try:
-            await self._push_to_queue(job)
-            bt.logging.info(f"Enqueued scrape job {job_id} for {scraper_id}")
+            self._push_to_queue(job)
+            bt.logging.info(f"Enqueued scrape job {job_id} for {scraper_id} to queue {self.queue_name}")
             return job_id
         except Exception as e:
             bt.logging.error(f"Failed to enqueue scrape job: {e}")
             raise ConnectionError(f"Failed to enqueue scrape job: {e}")
 
-    async def _push_to_queue(self, job: Dict[str, Any]) -> None:
-        """Push a job to the Redis queue."""
+    def _push_to_queue(self, job: Dict[str, Any]) -> None:
+        """
+        Push a job to the specified Redis queue.
+
+        Args:
+            job: The job data to push
+            queue_name: The queue name to use.
+        """
         if not self.redis:
             raise Exception("Redis connection not established")
+
         encoded_job = json.dumps(job)
-        await self.redis.rpush(self.queue_name, encoded_job)
+        self.redis.rpush(self.queue_name, encoded_job)

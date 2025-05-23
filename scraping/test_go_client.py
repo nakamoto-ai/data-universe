@@ -1,15 +1,10 @@
 import asyncio
 import datetime as dt
 import argparse
-import json
 from typing import List, Optional
 
-import bittensor as bt
-from bittensor import logging
 from common.data import DateRange, DataLabel
 from scraping.go_client import GoScraperClient
-
-logging.set_debug()
 
 async def test_enqueue_job(
     client: GoScraperClient,
@@ -17,9 +12,11 @@ async def test_enqueue_job(
     hours_ago: int = 24,
     entity_limit: Optional[int] = 10,
     labels: Optional[List[str]] = None,
-    callback_info: Optional[dict] = None
+    callback_info: Optional[dict] = None,
+    queue_name: Optional[str] = None
 ):
     """Test enqueueing a single scrape job with the specified parameters."""
+    # Determine which queue will be used (for display purposes)
     print(f"\n=== Enqueueing job for {scraper_id} ===")
 
     # Create date range
@@ -44,7 +41,8 @@ async def test_enqueue_job(
             date_range=date_range,
             labels=data_labels,
             entity_limit=entity_limit,
-            callback_info=callback_info
+            callback_info=callback_info,
+            queue_name=queue_name
         )
         elapsed = (dt.datetime.now() - start).total_seconds()
 
@@ -64,21 +62,30 @@ async def main():
     parser.add_argument("--redis", type=str, default="redis://localhost:6379",
                       help="Redis connection URL")
     parser.add_argument("--queue", type=str, default="scrape_queue",
-                      help="Redis queue name")
+                      help="Default Redis queue name")
+    parser.add_argument("--reddit-queue", type=str, default="reddit_scrape_queue",
+                      help="Redis queue name for Reddit scrapers")
+    parser.add_argument("--x-queue", type=str, default="x_scrape_queue",
+                      help="Redis queue name for X/Twitter scrapers")
+    parser.add_argument("--youtube-queue", type=str, default="youtube_scrape_queue",
+                      help="Redis queue name for YouTube scrapers")
     parser.add_argument("--hours", type=int, default=24,
                       help="Hours ago to start scraping from")
     parser.add_argument("--limit", type=int, default=10,
                       help="Maximum number of entities to retrieve")
     parser.add_argument("--labels", type=str, nargs="+",
                       help="Labels to filter by")
-    parser.add_argument("--batch", action="store_true",
-                      help="Test batch job enqueueing")
     parser.add_argument("--callback-url", type=str,
                       help="Optional callback URL for results")
+    parser.add_argument("--specific-queue", type=str,
+                      help="Use a specific queue name (overrides automatic queue selection)")
     args = parser.parse_args()
 
     # Create client
-    client = GoScraperClient(redis_url=args.redis, queue_name=args.queue)
+    client = GoScraperClient(
+        redis_url=args.redis,
+        queue_name=args.queue,
+    )
 
     # Prepare callback info if provided
     callback_info = None
@@ -100,7 +107,8 @@ async def main():
             hours_ago=args.hours,
             entity_limit=args.limit,
             labels=args.labels,
-            callback_info=callback_info
+            callback_info=callback_info,
+            queue_name=args.specific_queue
         )
     finally:
         await client.close()
