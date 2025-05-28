@@ -37,7 +37,8 @@ class GoScraperClient:
             try:
                 self.redis = Redis.from_url(self.redis_url)
                 self._connected = True
-                bt.logging.info(f"Connected to Redis at {self.redis_url}")
+                bt.logging.info(f"Connected to Redis at {self.redis_url} using queue '{self.queue_name}'")
+
             except Exception as e:
                 bt.logging.error(f"Failed to connect to Redis: {e}")
                 raise
@@ -105,14 +106,14 @@ class GoScraperClient:
 
         # Send the job to the queue
         try:
-            self._push_to_queue(job)
+            await self._push_to_queue(job)
             bt.logging.info(f"Enqueued scrape job {job_id} for {scraper_id} to queue {self.queue_name}")
             return job_id
         except Exception as e:
             bt.logging.error(f"Failed to enqueue scrape job: {e}")
             raise ConnectionError(f"Failed to enqueue scrape job: {e}")
 
-    def _push_to_queue(self, job: Dict[str, Any]) -> None:
+    async def _push_to_queue(self, job: Dict[str, Any]) -> None:
         """
         Push a job to the specified Redis queue.
 
@@ -122,6 +123,7 @@ class GoScraperClient:
         """
         if not self.redis:
             raise Exception("Redis connection not established")
-
+    
+        print(f"Pushing job to queue {self.queue_name}")
         encoded_job = json.dumps(job)
-        self.redis.rpush(self.queue_name, encoded_job)
+        await self.redis.rpush(self.queue_name, encoded_job)
