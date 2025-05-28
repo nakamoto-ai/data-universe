@@ -57,8 +57,8 @@ async def test_enqueue_job(
 async def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Test the Go scraper queue client")
-    parser.add_argument("--scraper", type=str, default="X.flash",
-                      help="Scraper ID to test (default: X.flash)")
+    parser.add_argument("--scraper", type=str, default="Reddit.custom",
+                      help="Scraper ID to test (default: Reddit.custom)")
     parser.add_argument("--redis", type=str, default="redis://localhost:6379",
                       help="Redis connection URL")
     parser.add_argument("--queue", type=str, default="scrape_queue",
